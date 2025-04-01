@@ -56,7 +56,7 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 
    ```bash
    pulumi stack init dev
-   pulumi config set aws:region us-east-1
+   pulumi config set aws:region ap-south-1
    pulumi config set portfolio-website-pipeline:domain your-domain.com
    pulumi config set portfolio-website-pipeline:environment dev
    pulumi config set portfolio-website-pipeline:githubRepo your-repo-name
@@ -66,11 +66,12 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 4. Set up secrets (make sure to use `--secret` flag):
 
    ```bash
-   pulumi config set --secret portfolio-website-pipeline:certificateArn arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id
-   pulumi config set --secret portfolio-website-pipeline:pulumiAccessToken your-pulumi-token
-   pulumi config set --secret portfolio-website-pipeline:awsAccessKeyId your-aws-key
-   pulumi config set --secret portfolio-website-pipeline:awsSecretAccessKey your-aws-secret
-   pulumi config set --secret portfolio-website-pipeline:githubToken your-github-token
+   pulumi config set --secret portfolio-website-pipeline:certificateArn arn:aws:acm:ap-south-1:123456789012:certificate/your-cert-id
+   pulumi config set --secret portfolio-website-pipeline:pulumiAccessToken <your-pulumi-token>
+   pulumi config set --secret portfolio-website-pipeline:awsAccessKeyId <your-aws-key>
+   pulumi config set --secret portfolio-website-pipeline:awsSecretAccessKey <your-aws-secret>
+   pulumi config set --secret portfolio-website-pipeline:githubToken <your-github-token>
+   pulumi config set --secret cloudflareAccountId <your-cloudflare-account-id>
    ```
 
 5. Deploy the infrastructure:
@@ -154,7 +155,7 @@ You can customize this solution by:
 
 ### Common Issues
 
-1. **Certificate Not Found**: Ensure your ACM certificate is in the us-east-1 region for CloudFront
+1. **Certificate Not Found**: Ensure your ACM certificate is in the ap-south-1 region for CloudFront
 2. **DNS Not Resolving**: Check Cloudflare DNS propagation (can take up to 48 hours)
 3. **Deployment Failures**: Check GitHub Actions logs for detailed error messages
 

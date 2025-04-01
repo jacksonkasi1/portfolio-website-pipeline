@@ -1,6 +1,6 @@
 # Pulumi.dev.yaml - Dev environment configuration
 config:
-  aws:region: us-east-1
+  aws:region: ap-south-1
   portfolio-website-pipeline:environment: dev
   portfolio-website-pipeline:domain: your-portfolio-domain.com
   portfolio-website-pipeline:githubRepo: portfolio-website
