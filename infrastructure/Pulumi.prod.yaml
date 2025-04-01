@@ -1,0 +1,17 @@
+# Pulumi.prod.yaml - Production environment configuration
+config:
+  aws:region: us-east-1
+  portfolio-website-pipeline:environment: prod
+  portfolio-website-pipeline:domain: your-portfolio-domain.com
+  portfolio-website-pipeline:githubRepo: portfolio-website
+  portfolio-website-pipeline:githubOwner: your-github-username
+  portfolio-website-pipeline:certificateArn: 
+    secure: AAABAEsOMmRexample=  # Replace with your ACM certificate ARN
+  portfolio-website-pipeline:pulumiAccessToken:
+    secure: AAABAKtG5Iexample=  # Same as dev, you can reuse these secrets
+  portfolio-website-pipeline:awsAccessKeyId:
+    secure: AAABAJr6Sexample=
+  portfolio-website-pipeline:awsSecretAccessKey:
+    secure: AAABADgn+example=
+  portfolio-website-pipeline:githubToken:
+    secure: AAABAMvKRexample=

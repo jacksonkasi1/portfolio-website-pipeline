@@ -1,0 +1,31 @@
+{
+  "name": "portfolio-website-pipeline",
+  "version": "1.0.0",
+  "description": "Multi-Environment Portfolio Website Pipeline using Pulumi",
+  "main": "bin/index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "tsc"
+  },
+  "keywords": [
+    "pulumi",
+    "aws",
+    "cloudfront",
+    "s3",
+    "static-website",
+    "devops",
+    "cicd"
+  ],
+  "author": "Jackson Kasi",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.17",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@pulumi/aws": "^6.74.0",
+    "@pulumi/cloudflare": "^5.49.1",
+    "@pulumi/github": "^6.7.0",
+    "@pulumi/pulumi": "^3.160.0"
+  }
+}

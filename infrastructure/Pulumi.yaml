@@ -1,0 +1,5 @@
+# Pulumi.yaml - Project configuration
+name: portfolio-website-pipeline
+runtime: nodejs
+description: Multi-Environment Portfolio Website Pipeline using Pulumi
+
