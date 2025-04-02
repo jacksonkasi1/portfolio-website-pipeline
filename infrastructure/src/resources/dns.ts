@@ -40,18 +40,30 @@ export const validationInfo = certificate.domainValidationOptions.apply(options 
     return message;
 });
 
-// Skip DNS record creation since they already exist in Cloudflare
+// Create DNS validation records
+const validationRecords = certificate.domainValidationOptions.apply(options => {
+    return options.map((option, index) => {
+        return new cloudflare.Record(`${namePrefix}-cert-validation-${index}`, {
+            zoneId: zone.id,
+            name: option.resourceRecordName!,
+            type: option.resourceRecordType!,
+            content: option.resourceRecordValue!,
+            ttl: 60,
+            proxied: false,
+        }, { provider: cloudflareProvider });
+    });
+});
 
-// Wait for certificate validation to complete with custom FQDNs
+// Wait for certificate validation to complete
 export const certificateValidation = new aws.acm.CertificateValidation(`${namePrefix}-cert-validation`, {
     certificateArn: certificate.arn,
-    validationRecordFqdns: certificate.domainValidationOptions.apply(options => 
-        options.map(option => option.resourceRecordName!)
+    validationRecordFqdns: validationRecords.apply(records => 
+        records.map(record => `${record.name}.${domain}`)
     ),
 }, { provider: eastRegionProvider });
 
 // Create CloudFront distribution with the validated certificate
-export const distribution = createDistribution(certificate.arn);
+export const distribution = createDistribution(certificateValidation.certificateArn);
 
 // Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
