@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion } from "../config";
+import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion, cloudflareProvider } from "../config";
 import { distribution } from "./cdn";
 
 // Create ACM Certificate in us-east-1 (required for CloudFront)
@@ -20,9 +20,9 @@ export const certificate = new aws.acm.Certificate(`${namePrefix}-cert`, {
 
 // Set up DNS with Cloudflare
 export const zone = new cloudflare.Zone(`${namePrefix}-zone`, {
-  zone: domain,
-  accountId: cloudflareAccountId,
-});
+    zone: domain,
+    accountId: cloudflareAccountId,
+}, { provider: cloudflareProvider });
 
 // Create DNS validation records
 const validationRecords = certificate.domainValidationOptions.apply(options => {
@@ -33,8 +33,8 @@ const validationRecords = certificate.domainValidationOptions.apply(options => {
             type: option.resourceRecordType!,
             value: option.resourceRecordValue!,
             ttl: 60,
-            proxied: false, // DNS validation records should not be proxied
-        });
+            proxied: false,
+        }, { provider: cloudflareProvider });
     });
 });
 
@@ -48,10 +48,10 @@ export const certificateValidation = new aws.acm.CertificateValidation(`${namePr
 
 // Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
-  zoneId: zone.id,
-  name: environment === "prod" ? "@" : environment,
-  value: distribution.domainName,
-  type: "CNAME",
-  ttl: 3600,
-  proxied: true,
-});
+    zoneId: zone.id,
+    name: environment === "prod" ? "@" : environment,
+    value: distribution.domainName,
+    type: "CNAME",
+    ttl: 3600,
+    proxied: true,
+}, { provider: cloudflareProvider });

@@ -72,6 +72,7 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
    pulumi config set --secret portfolio-website-pipeline:awsSecretAccessKey <your-aws-secret>
    pulumi config set --secret portfolio-website-pipeline:githubToken <your-github-token>
    pulumi config set --secret cloudflareAccountId <your-cloudflare-account-id>
+   pulumi config set --secret cloudflareApiToken <your-api-token>
    ```
 
 5. Deploy the infrastructure:

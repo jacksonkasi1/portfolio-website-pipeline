@@ -7,3 +7,5 @@ node_modules/
 # Ignore build outputs
 dist/
 bin/
+
+secrets.txt
