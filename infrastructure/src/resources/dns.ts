@@ -1,12 +1,12 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareAccountId, cloudflareProvider, region } from "../config";
-import { createDistribution } from "./cdn";
+import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion, cloudflareProvider } from "../config";
+import { createDistribution, originAccessIdentity } from "./cdn";
 
 // Create ACM Certificate in us-east-1 (required for CloudFront)
 const eastRegionProvider = new aws.Provider('east1-provider', {
-    region
+    region: 'us-east-1'
 });
 
 export const certificate = new aws.acm.Certificate(`${namePrefix}-cert`, {
@@ -18,43 +18,47 @@ export const certificate = new aws.acm.Certificate(`${namePrefix}-cert`, {
     tags: tags,
 }, { provider: eastRegionProvider });
 
-// Set up DNS with Cloudflare
-export const zone = new cloudflare.Zone(`${namePrefix}-zone`, {
-    zone: domain,
-    accountId: cloudflareAccountId,
-}, { provider: cloudflareProvider });
+// Get the Cloudflare zone using the provider
+const zoneData = pulumi.output(cloudflare.getZone({
+    name: domain,
+}, { provider: cloudflareProvider }));
 
-// Create DNS validation records
-const validationRecords = certificate.domainValidationOptions.apply(options => {
-    return options.map(option => {
-        return new cloudflare.Record(`${namePrefix}-cert-validation-${option.domainName.replace(/\./g, "-")}`, {
-            zoneId: zone.id,
-            name: option.resourceRecordName!,
-            type: option.resourceRecordType!,
-            value: option.resourceRecordValue!,
-            ttl: 60,
-            proxied: false,
-        }, { provider: cloudflareProvider });
+export const zone = {
+    id: zoneData.id,
+    name: zoneData.name
+};
+
+// Display validation requirements
+export const validationInfo = certificate.domainValidationOptions.apply(options => {
+    let message = "Domain validation records required:\n";
+    options.forEach(option => {
+        message += `Name: ${option.resourceRecordName}\n`;
+        message += `Type: ${option.resourceRecordType}\n`;
+        message += `Value: ${option.resourceRecordValue}\n\n`;
     });
+    console.log(message);
+    return message;
 });
 
-// Wait for certificate validation to complete
+// Skip DNS record creation since they already exist in Cloudflare
+
+// Wait for certificate validation to complete with custom FQDNs
 export const certificateValidation = new aws.acm.CertificateValidation(`${namePrefix}-cert-validation`, {
     certificateArn: certificate.arn,
-    validationRecordFqdns: validationRecords.apply(records => 
-        records.map(record => `${record.name}.${domain}`)
+    validationRecordFqdns: certificate.domainValidationOptions.apply(options => 
+        options.map(option => option.resourceRecordName!)
     ),
 }, { provider: eastRegionProvider });
 
 // Create CloudFront distribution with the validated certificate
-export const distribution = createDistribution(certificateValidation.certificateArn);
+export const distribution = createDistribution(certificate.arn);
 
 // Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
     zoneId: zone.id,
     name: environment === "prod" ? "@" : environment,
-    value: distribution.domainName,
+    content: distribution.domainName,
     type: "CNAME",
-    ttl: 3600,
+    ttl: 1,
     proxied: true,
 }, { provider: cloudflareProvider });

@@ -19,4 +19,4 @@ config:
   portfolio-website-pipeline:cloudflareAccountId:
     secure: AAABAGJ12yWkeRv/E/Od7rlNA7NKhxf9dETXdiPrrqFEOBCmSzHC2C+K520QwgAgwMtSCMiL8rmcbyDApqAbxg==
   portfolio-website-pipeline:cloudflareApiToken:
-    secure: AAABAMPWMw8oDl3zLA3rTW6jmVl0J1WmWwhcGeC0oQ3aGdKRPXNx2AF0h0bKf+LwIwRGiu2PGniW6srIwb6DW4WAKmK4AAEo
+    secure: AAABAEYk7213nuNdp760p95jHk8UUwuCKNO1l+W0DS94UG/HFZUUrx9RM13+OSgHiy9tQWXhMK9SBOfPY0mcDYM8ZBqKBADw
