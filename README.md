@@ -2,7 +2,6 @@
 
 A complete CI/CD pipeline solution for deploying and managing a portfolio website across multiple environments (development, staging, production) using Pulumi's Infrastructure as Code capabilities.
 
-
 ## Features
 
 - **Multi-environment Infrastructure**: Separate dev, staging, and production environments with appropriate configurations
