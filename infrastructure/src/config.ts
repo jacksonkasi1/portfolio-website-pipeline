@@ -1,5 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
-
+import * as aws from "@pulumi/aws";
 // Get configuration
 const config = new pulumi.Config();
 const awsConfig = new pulumi.Config("aws");
@@ -9,14 +9,14 @@ export const domain = config.require("domain"); // Your base domain, e.g., examp
 export const githubToken = config.requireSecret("githubToken");
 export const githubRepo = config.require("githubRepo");
 export const githubOwner = config.require("githubOwner");
-export const certificateArn = config.require("certificateArn");
+// export const certificateArn = config.require("certificateArn");
 export const pulumiAccessToken = config.requireSecret("pulumiAccessToken");
 export const awsAccessKeyId = config.requireSecret("awsAccessKeyId");
 export const awsSecretAccessKey = config.requireSecret("awsSecretAccessKey");
 export const cloudflareAccountId = config.require("cloudflareAccountId");
 
 // AWS provider configuration
-export const awsRegion = awsConfig.require("region");
+export const awsRegion = awsConfig.require("region") as aws.Region; // eg: ap-south-1
 
 // Derived configuration
 export const namePrefix = `portfolio-${environment}`;

@@ -5,10 +5,10 @@ import {
   environmentDomain,
   environment,
   tags,
-  certificateArn,
 } from "../config";
 import { siteBucket } from "./storage";
 import { createBucketPolicy } from "./storage";
+import { certificateValidation } from "./dns";
 
 // Create an origin access identity for CloudFront
 export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
@@ -74,7 +74,7 @@ export const distribution = new aws.cloudfront.Distribution(
     },
 
     viewerCertificate: {
-      acmCertificateArn: certificateArn,
+      acmCertificateArn: certificateValidation.certificateArn,
       sslSupportMethod: "sni-only",
       minimumProtocolVersion: "TLSv1.2_2021",
     },
