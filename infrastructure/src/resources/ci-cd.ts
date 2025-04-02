@@ -35,7 +35,7 @@ export const secretValue = new aws.secretsmanager.SecretVersion(`${namePrefix}-g
 
 // Set up GitHub repository if it doesn't exist
 export const repo = new github.Repository(`${namePrefix}-repo`, {
-    name: githubRepo,
+    name: "portfolio-website-pipeline-new",  // Use the exact repository name
     visibility: "private",
     hasIssues: true,
     hasProjects: true,
@@ -55,8 +55,7 @@ export const repo = new github.Repository(`${namePrefix}-repo`, {
     squashMergeCommitTitle: "PR_TITLE"
 }, { 
     provider: githubProvider,
-    dependsOn: [githubProvider],
-    import: `${githubOwner}/${githubRepo}` // Import existing repository
+    dependsOn: [githubProvider]
 });
 
 // Create GitHub Actions secrets
@@ -103,7 +102,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install --no-package-lock
-      
+
       - name: Build website
         run: npm run build
       
@@ -230,6 +229,5 @@ export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-fi
     autocreateBranch: true,
 }, { 
     provider: githubProvider,
-    dependsOn: [repo],
-    import: `${githubOwner}/${githubRepo}/.github/workflows/deploy.yml` // Import existing workflow file
+    dependsOn: [repo]
 });
