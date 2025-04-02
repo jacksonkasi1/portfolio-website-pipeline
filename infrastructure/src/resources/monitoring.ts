@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { namePrefix, tags, environmentDomain, awsRegion } from "../config";
-import { distribution } from "./cdn";
+import { distribution } from "./dns";
 import { siteBucket } from "./storage";
 
 // Set up monitoring and alerting

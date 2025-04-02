@@ -1,5 +1,4 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
 // Get configuration
 const config = new pulumi.Config();
@@ -19,7 +18,9 @@ export const cloudflareAccountId = config.require("cloudflareAccountId");
 export const cloudflareApiToken = config.requireSecret("cloudflareApiToken");
 
 // AWS provider configuration
-export const awsRegion = awsConfig.require("region") as aws.Region; // eg: ap-south-1
+export const awsRegion = awsConfig.require("region");
+
+export const region = "ap-south-1";
 
 // Derived configuration
 export const namePrefix = `portfolio-${environment}`;

@@ -3,8 +3,8 @@ import { environment, domain, namePrefix, environmentDomain, awsRegion } from ".
 
 // Import all resources
 import { siteBucket } from "./resources/storage";
-import { distribution } from "./resources/cdn";
-import { zone, record } from "./resources/dns";
+import { originAccessIdentity } from "./resources/cdn";
+import { zone, certificate, certificateValidation, distribution, record } from "./resources/dns";
 import { repo, workflowFile } from "./resources/ci-cd";
 import { PreviewEnvironment } from "./resources/preview";
 import { dashboard, errorAlarm } from "./resources/monitoring";

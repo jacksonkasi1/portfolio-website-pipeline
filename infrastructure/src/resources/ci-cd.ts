@@ -13,7 +13,7 @@ import {
     domain,
     environment
 } from "../config";
-import { distribution } from "./cdn";
+import { distribution } from "./dns";
 
 // Set up GitHub Actions workflow for CI/CD
 export const actionsSecret = new aws.secretsmanager.Secret(`${namePrefix}-gh-secret`, {
@@ -82,17 +82,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
+      
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+      
       - name: Run tests
         run: npm test
+      
       - name: Build website
         run: npm run build
+      
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -105,20 +110,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
           name: build-output
           path: dist/
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+      
       - name: Set up Pulumi
         uses: pulumi/actions@v4
         with:
-          command: preview,
+          command: preview
           stack-name: preview
         env:
           PULUMI_ACCESS_TOKEN: \${{ secrets.PULUMI_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deploy-dev:
     if: github.ref == 'refs/heads/develop'
@@ -126,11 +138,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
           name: build-output
           path: dist/
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+      
       - name: Set up Pulumi
         uses: pulumi/actions@v4
         with:
@@ -138,10 +159,14 @@ jobs:
           stack-name: dev
         env:
           PULUMI_ACCESS_TOKEN: \${{ secrets.PULUMI_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
       - name: Deploy to S3
-        run: aws s3 sync dist/ s3://${environmentDomain}/ --delete
+        run: |
+          echo "Deploying to ${environmentDomain}"
+          aws s3 sync dist/ s3://${environmentDomain}/ --delete
+      
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id ${distribution.id} --paths "/*"
 
   deploy-prod:
     if: github.ref == 'refs/heads/main'
@@ -149,11 +174,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
           name: build-output
           path: dist/
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+      
       - name: Set up Pulumi
         uses: pulumi/actions@v4
         with:
@@ -161,10 +195,12 @@ jobs:
           stack-name: prod
         env:
           PULUMI_ACCESS_TOKEN: \${{ secrets.PULUMI_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
       - name: Deploy to S3
-        run: aws s3 sync dist/ s3://${environment === "prod" ? domain : environmentDomain}/ --delete
+        run: |
+          echo "Deploying to ${domain}"
+          aws s3 sync dist/ s3://${domain}/ --delete
+      
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id ${distribution.id} --paths "/*"
 `;

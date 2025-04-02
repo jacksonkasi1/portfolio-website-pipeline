@@ -1,19 +1,19 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion, cloudflareProvider } from "../config";
-import { distribution } from "./cdn";
+import { namePrefix, tags, domain, environment, cloudflareAccountId, cloudflareProvider, region } from "../config";
+import { createDistribution } from "./cdn";
 
 // Create ACM Certificate in us-east-1 (required for CloudFront)
 const eastRegionProvider = new aws.Provider('east1-provider', {
-    region: awsRegion
+    region
 });
 
 export const certificate = new aws.acm.Certificate(`${namePrefix}-cert`, {
     domainName: domain,
     validationMethod: "DNS",
     subjectAlternativeNames: [
-        `*.${domain}` // Covers all subdomains
+        `*.${domain}`
     ],
     tags: tags,
 }, { provider: eastRegionProvider });
@@ -45,6 +45,9 @@ export const certificateValidation = new aws.acm.CertificateValidation(`${namePr
         records.map(record => `${record.name}.${domain}`)
     ),
 }, { provider: eastRegionProvider });
+
+// Create CloudFront distribution with the validated certificate
+export const distribution = createDistribution(certificateValidation.certificateArn);
 
 // Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
