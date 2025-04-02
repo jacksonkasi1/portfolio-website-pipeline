@@ -66,7 +66,6 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 4. Set up secrets (make sure to use `--secret` flag):
 
    ```bash
-   pulumi config set --secret portfolio-website-pipeline:certificateArn arn:aws:acm:ap-south-1:123456789012:certificate/your-cert-id
    pulumi config set --secret portfolio-website-pipeline:pulumiAccessToken <your-pulumi-token>
    pulumi config set --secret portfolio-website-pipeline:awsAccessKeyId <your-aws-key>
    pulumi config set --secret portfolio-website-pipeline:awsSecretAccessKey <your-aws-secret>
