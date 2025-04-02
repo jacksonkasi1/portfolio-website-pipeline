@@ -30,4 +30,4 @@ jobs:
       - name: Deploy Website Content
         run: |
           BUCKET_NAME=${{ github.ref == 'refs/heads/main' && 'jacksonkasi.xyz' || 'dev.jacksonkasi.xyz' }}
-          aws s3 sync out s3://$BUCKET_NAME --delete
+          aws s3 sync dist s3://$BUCKET_NAME --delete

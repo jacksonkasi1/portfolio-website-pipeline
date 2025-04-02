@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"No tests specified\" && exit 0",
     "deploy": "pulumi up",
-    "deploy:content": "aws s3 sync ../out s3://$(pulumi stack output bucketName) --delete"
+    "deploy:content": "aws s3 sync ../dist s3://$(pulumi stack output bucketName) --delete"
   },
   "keywords": [
     "pulumi",
