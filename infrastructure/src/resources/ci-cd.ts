@@ -55,7 +55,8 @@ export const repo = new github.Repository(`${namePrefix}-repo`, {
     squashMergeCommitTitle: "PR_TITLE"
 }, { 
     provider: githubProvider,
-    dependsOn: [githubProvider]
+    dependsOn: [githubProvider],
+    import: `${githubOwner}/${githubRepo}` // Import existing repository
 });
 
 // Create GitHub Actions secrets
@@ -227,4 +228,8 @@ export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-fi
     commitEmail: "automation@pulumi.com",
     overwriteOnCreate: true,
     autocreateBranch: true,
-}, { provider: githubProvider });
+}, { 
+    provider: githubProvider,
+    dependsOn: [repo],
+    import: `${githubOwner}/${githubRepo}/.github/workflows/deploy.yml` // Import existing workflow file
+});
