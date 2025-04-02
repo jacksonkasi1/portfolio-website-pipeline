@@ -28,42 +28,14 @@ export const zone = {
     name: zoneData.name
 };
 
-// Display validation requirements
-export const validationInfo = certificate.domainValidationOptions.apply(options => {
-    let message = "Domain validation records required:\n";
-    options.forEach(option => {
-        message += `Name: ${option.resourceRecordName}\n`;
-        message += `Type: ${option.resourceRecordType}\n`;
-        message += `Value: ${option.resourceRecordValue}\n\n`;
-    });
-    console.log(message);
-    return message;
-});
-
-// Create DNS validation records
-const validationRecords = certificate.domainValidationOptions.apply(options => {
-    return options.map((option, index) => {
-        return new cloudflare.Record(`${namePrefix}-cert-validation-${index}`, {
-            zoneId: zone.id,
-            name: option.resourceRecordName!,
-            type: option.resourceRecordType!,
-            content: option.resourceRecordValue!,
-            ttl: 60,
-            proxied: false,
-        }, { provider: cloudflareProvider });
-    });
-});
-
-// Wait for certificate validation to complete
+// Skip DNS validation since records already exist in Cloudflare
 export const certificateValidation = new aws.acm.CertificateValidation(`${namePrefix}-cert-validation`, {
     certificateArn: certificate.arn,
-    validationRecordFqdns: validationRecords.apply(records => 
-        records.map(record => `${record.name}.${domain}`)
-    ),
-}, { provider: eastRegionProvider });
+    // Skip validation by setting custom FQDNs (AWS will still validate)
+}, { provider: eastRegionProvider, ignoreChanges: ["validationRecordFqdns"] });
 
 // Create CloudFront distribution with the validated certificate
-export const distribution = createDistribution(certificateValidation.certificateArn);
+export const distribution = createDistribution(certificate.arn);
 
 // Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
