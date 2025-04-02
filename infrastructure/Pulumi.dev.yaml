@@ -4,7 +4,7 @@ config:
   aws:region: ap-south-1
   portfolio-website-pipeline:environment: dev
   portfolio-website-pipeline:domain: jacksonkasi.xyz
-  portfolio-website-pipeline:githubRepo: portfolio-website-pipeline
+  portfolio-website-pipeline:githubRepo: portfolio-website-pipeline-new
   portfolio-website-pipeline:githubOwner: jacksonkasi1
   # portfolio-website-pipeline:certificateArn:
   #   secure: AAABAEsOMmRexample= # Replace with your ACM certificate ARN
@@ -15,8 +15,10 @@ config:
   portfolio-website-pipeline:awsSecretAccessKey:
     secure: AAABALaE31eYq2lTM1iUjWk4PN/xIfvmlxu1cUMhT6gejPgIJnmIfFBktid8D6SRxwQ3E05QxkQ85KUt6bWfEZKX0Vzc7Vuq # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:githubToken:
-    secure: AAABAI1EWNjBfx4UQQG+3ey6ErWupJpOt+QzCXqJ3kR3njTy8APETbI/Xggskb1Oa+k0X+iVzUY519g5W6/ehrC/Yk9PpmL7knTWWPvttnUZ6C/b96ADAJgEKbEqFYQyp9v0urjngCJ0j0igHWnxE7l0nMtr1BLegYofgoU= # Securely set this with pulumi config set --secret
+    secure: AAABALEzDCyiGkupK6G4Wf9JXn7RCbEg+x4vKgT6fmnhQ4F3sDnY5+XaQO9ASj3QcGDIfIQC5gY1cMlbDhEka8lSMz47/63+ # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:cloudflareAccountId:
     secure: AAABAGJ12yWkeRv/E/Od7rlNA7NKhxf9dETXdiPrrqFEOBCmSzHC2C+K520QwgAgwMtSCMiL8rmcbyDApqAbxg==
   portfolio-website-pipeline:cloudflareApiToken:
     secure: AAABAEYk7213nuNdp760p95jHk8UUwuCKNO1l+W0DS94UG/HFZUUrx9RM13+OSgHiy9tQWXhMK9SBOfPY0mcDYM8ZBqKBADw
+  portfolio-website-pipeline:githubToke:
+    secure: AAABAM3PGCM0gFuzwbInwdjFMokS2vFXAWCDt2n3HYBA7v2awaOxkHBe7DxI9fXoZ4rbYOzgJS0Na6W0eLUc4cwDDBcpUAqGbrqIzDm74keU811DFsm2OvizRzzJQFoG7q4qW3hhHcj915TxDCE+EnAh3dYI1vHI891hRTs=

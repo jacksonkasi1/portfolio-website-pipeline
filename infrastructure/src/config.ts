@@ -1,5 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as cloudflare from "@pulumi/cloudflare";
+import * as github from "@pulumi/github";
 // Get configuration
 const config = new pulumi.Config();
 const awsConfig = new pulumi.Config("aws");
@@ -37,4 +38,17 @@ export const tags = {
 // Configure Cloudflare provider
 export const cloudflareProvider = new cloudflare.Provider("cloudflare", {
     apiToken: cloudflareApiToken
+});
+
+// Configure GitHub provider
+export const githubProvider = new github.Provider("github", {
+    token: githubToken,
+    owner: githubOwner,
+    baseUrl: "https://api.github.com/",
+    insecure: false,
+    writeDelayMs: 1000,
+    readDelayMs: 1000,
+    retryableErrors: [429, 500, 502, 503, 504],
+    maxRetries: 3,
+    retryDelayMs: 1000,
 });

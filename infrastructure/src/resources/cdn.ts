@@ -6,8 +6,8 @@ import {
   environment,
   tags,
 } from "../config";
-import { siteBucket } from "./storage";
-import { createBucketPolicy } from "./storage";
+import { siteBucket, bucketPolicy } from "./storage";
+import { certificate } from "./certificate";
 
 // Create an origin access identity for CloudFront
 export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
@@ -17,77 +17,76 @@ export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
   }
 );
 
-// Function to create CloudFront distribution
-export function createDistribution(certificateArn: pulumi.Input<string>) {
-  return new aws.cloudfront.Distribution(
-    `${namePrefix}-distribution`,
-    {
-      enabled: true,
-      isIpv6Enabled: true,
-      defaultRootObject: "index.html",
-      aliases: [environmentDomain],
-
-      origins: [
+// Create CloudFront distribution only in production
+export const distribution = environment === "prod" 
+    ? new aws.cloudfront.Distribution(
+        `${namePrefix}-distribution`,
         {
-          domainName: siteBucket.bucketRegionalDomainName,
-          originId: siteBucket.arn,
-          s3OriginConfig: {
-            originAccessIdentity:
-              originAccessIdentity.cloudfrontAccessIdentityPath,
+          enabled: true,
+          isIpv6Enabled: true,
+          defaultRootObject: "index.html",
+          aliases: [environmentDomain],
+
+          origins: [
+            {
+              domainName: siteBucket.bucketRegionalDomainName,
+              originId: siteBucket.arn,
+              s3OriginConfig: {
+                originAccessIdentity: originAccessIdentity.cloudfrontAccessIdentityPath,
+              },
+            },
+          ],
+
+          defaultCacheBehavior: {
+            targetOriginId: siteBucket.arn,
+            viewerProtocolPolicy: "redirect-to-https",
+            allowedMethods: ["GET", "HEAD", "OPTIONS"],
+            cachedMethods: ["GET", "HEAD", "OPTIONS"],
+            forwardedValues: {
+              queryString: false,
+              cookies: {
+                forward: "none",
+              },
+            },
+            minTtl: 0,
+            defaultTtl: 3600,
+            maxTtl: 86400,
+            compress: true,
           },
-        },
-      ],
 
-      defaultCacheBehavior: {
-        targetOriginId: siteBucket.arn,
-        viewerProtocolPolicy: "redirect-to-https",
-        allowedMethods: ["GET", "HEAD", "OPTIONS"],
-        cachedMethods: ["GET", "HEAD", "OPTIONS"],
-        forwardedValues: {
-          queryString: false,
-          cookies: {
-            forward: "none",
+          priceClass: "PriceClass_All",
+
+          customErrorResponses: [
+            {
+              errorCode: 404,
+              responseCode: 404,
+              responsePagePath: "/error.html",
+            },
+          ],
+
+          restrictions: {
+            geoRestriction: {
+              restrictionType: "none",
+            },
           },
-        },
-        minTtl: 0,
-        defaultTtl: 3600,
-        maxTtl: environment === "prod" ? 86400 : 3600,
-        compress: true,
-      },
 
-      priceClass: environment === "prod" ? "PriceClass_All" : "PriceClass_100",
+          viewerCertificate: {
+            acmCertificateArn: certificate.arn,
+            sslSupportMethod: "sni-only",
+            minimumProtocolVersion: "TLSv1.2_2021",
+          },
 
-      customErrorResponses: [
-        {
-          errorCode: 404,
-          responseCode: 404,
-          responsePagePath: "/error.html",
-        },
-      ],
-
-      restrictions: {
-        geoRestriction: {
-          restrictionType: "none",
-        },
-      },
-
-      viewerCertificate: {
-        acmCertificateArn: certificateArn,
-        sslSupportMethod: "sni-only",
-        minimumProtocolVersion: "TLSv1.2_2021",
-      },
-
-      tags: tags,
-    }
-  );
-}
+          tags: tags,
+        }
+      )
+    : undefined;
 
 // Set up bucket policy to allow CloudFront access
 export function createBucketPolicyForOai(oaiArn: pulumi.Input<string>) {
   return pulumi
     .all([siteBucket.arn, oaiArn])
     .apply(([bucketArn, oaiArn]) => {
-      return createBucketPolicy(bucketArn, oaiArn);
+      return bucketPolicy;
     });
 }
 

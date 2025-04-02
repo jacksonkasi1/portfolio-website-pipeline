@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion, cloudflareProvider } from "../config";
+import { namePrefix, tags, domain, environment, cloudflareProvider } from "../config";
+import { distribution } from "./cdn";
 import { siteBucket } from "./storage";
 
 // Get the Cloudflare zone using the provider
@@ -14,11 +14,13 @@ export const zone = {
     name: zoneData.name
 };
 
-// Create DNS record for the domain pointing directly to S3 website endpoint
+// Create DNS record for the domain
 export const record = new cloudflare.Record(`${namePrefix}-record`, {
     zoneId: zone.id,
     name: environment === "prod" ? "@" : environment,
-    content: siteBucket.websiteEndpoint,
+    content: environment === "prod" && distribution 
+        ? distribution.domainName 
+        : siteBucket.websiteEndpoint,
     type: "CNAME",
     ttl: 1,
     proxied: true,

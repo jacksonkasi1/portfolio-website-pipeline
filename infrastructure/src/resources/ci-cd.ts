@@ -11,9 +11,10 @@ import {
     awsSecretAccessKey,
     environmentDomain,
     domain,
-    environment
+    environment,
+    githubProvider
 } from "../config";
-import { distribution } from "./dns";
+import { distribution } from "./cdn";
 
 // Set up GitHub Actions workflow for CI/CD
 export const actionsSecret = new aws.secretsmanager.Secret(`${namePrefix}-gh-secret`, {
@@ -43,9 +44,18 @@ export const repo = new github.Repository(`${namePrefix}-repo`, {
     allowSquashMerge: true,
     allowRebaseMerge: true,
     deleteBranchOnMerge: true,
+    autoInit: true,  // Initialize with README
+    description: "Portfolio website repository",
+    topics: ["portfolio", "website", "pulumi"],
+    defaultBranch: "main",
+    vulnerabilityAlerts: true,
+    allowAutoMerge: true,
+    allowUpdateBranch: true,
+    squashMergeCommitMessage: "PR_BODY",
+    squashMergeCommitTitle: "PR_TITLE"
 }, { 
-    // Use this option if the repository might already exist
-    import: `github.com/${githubOwner}/${githubRepo}`
+    provider: githubProvider,
+    dependsOn: [githubProvider]
 });
 
 // Create GitHub Actions secrets
@@ -53,19 +63,19 @@ export const pulumiAccessTokenSecret = new github.ActionsSecret(`${namePrefix}-p
     repository: repo.name,
     secretName: "PULUMI_ACCESS_TOKEN",
     plaintextValue: pulumiAccessToken,
-});
+}, { provider: githubProvider });
 
 export const awsAccessKeySecret = new github.ActionsSecret(`${namePrefix}-aws-key-secret`, {
     repository: repo.name,
     secretName: "AWS_ACCESS_KEY_ID",
     plaintextValue: awsAccessKeyId,
-});
+}, { provider: githubProvider });
 
 export const awsSecretKeySecret = new github.ActionsSecret(`${namePrefix}-aws-secret-secret`, {
     repository: repo.name,
     secretName: "AWS_SECRET_ACCESS_KEY",
     plaintextValue: awsSecretAccessKey,
-});
+}, { provider: githubProvider });
 
 // Create GitHub Actions workflow file for CI/CD pipeline
 const workflowContent = `
@@ -166,7 +176,8 @@ jobs:
           aws s3 sync dist/ s3://${environmentDomain}/ --delete
       
       - name: Invalidate CloudFront cache
-        run: aws cloudfront create-invalidation --distribution-id ${distribution.id} --paths "/*"
+        if: ${environment === "prod" && distribution?.id}
+        run: aws cloudfront create-invalidation --distribution-id ${distribution?.id} --paths "/*"
 
   deploy-prod:
     if: github.ref == 'refs/heads/main'
@@ -200,9 +211,10 @@ jobs:
         run: |
           echo "Deploying to ${domain}"
           aws s3 sync dist/ s3://${domain}/ --delete
-      
+
       - name: Invalidate CloudFront cache
-        run: aws cloudfront create-invalidation --distribution-id ${distribution.id} --paths "/*"
+        if: ${environment === "prod" && distribution?.id}
+        run: aws cloudfront create-invalidation --distribution-id ${distribution?.id} --paths "/*"
 `;
 
 export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-file`, {
@@ -214,4 +226,5 @@ export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-fi
     commitAuthor: "Pulumi Automation",
     commitEmail: "automation@pulumi.com",
     overwriteOnCreate: true,
-});
+    autocreateBranch: true,
+}, { provider: githubProvider });
