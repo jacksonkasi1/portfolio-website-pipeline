@@ -6,8 +6,6 @@ config:
   portfolio-website-pipeline:domain: jacksonkasi.xyz
   portfolio-website-pipeline:githubRepo: portfolio-website-pipeline-new
   portfolio-website-pipeline:githubOwner: jacksonkasi1
-  # portfolio-website-pipeline:certificateArn:
-  #   secure: AAABAEsOMmRexample= # Replace with your ACM certificate ARN
   portfolio-website-pipeline:pulumiAccessToken:
     secure: AAABAOkNavt9mEwPZNA28bymUzOq60eeEWMUj0V3fIFe7GAfmSebFH5RvIUyZ9gIDgWhI/MD66i1cLLHwQUwQUyp3/SJPy4HI4xwvw== # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:awsAccessKeyId:

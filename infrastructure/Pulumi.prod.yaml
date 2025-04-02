@@ -1,17 +1,20 @@
 # Pulumi.prod.yaml - Production environment configuration
+
 config:
   aws:region: ap-south-1
   portfolio-website-pipeline:environment: prod
-  portfolio-website-pipeline:domain: your-portfolio-domain.com
-  portfolio-website-pipeline:githubRepo: portfolio-website
-  portfolio-website-pipeline:githubOwner: your-github-username
-  portfolio-website-pipeline:certificateArn: 
-    secure: AAABAEsOMmRexample=  # Replace with your ACM certificate ARN
+  portfolio-website-pipeline:domain: jacksonkasi.xyz
+  portfolio-website-pipeline:githubRepo: portfolio-website-pipeline-new
+  portfolio-website-pipeline:githubOwner: jacksonkasi1
   portfolio-website-pipeline:pulumiAccessToken:
-    secure: AAABAKtG5Iexample=  # Same as dev, you can reuse these secrets
+    secure: AAABAEYLiSBepcbI8WDkAd0yvm/hTHWTbKvXRpYsR5Sia72AvGdX9wJlmwEjW+qKdnqE93LaZu74dFARo9NDlUWe/QZAt7/GOlZIrg== # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:awsAccessKeyId:
-    secure: AAABAJr6Sexample=
+    secure: AAABAKbfGJGQOOgNWkkqvxZ8ZGhwUGWQ1l558NU5fIDENi6Q2stzVAJ1s79z/6Kiz4YGEQ== # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:awsSecretAccessKey:
-    secure: AAABADgn+example=
+    secure: AAABAMFbvWaKbrPquB1qU/dDXiL1YZBIuWu6HMaIxfsxTcl03lMOhZJUHHXu11IB7gy/YlMaH7xUZmXaA6qmGZp3NEkfOSQf # Securely set this with pulumi config set --secret
   portfolio-website-pipeline:githubToken:
-    secure: AAABAMvKRexample=
+    secure: AAABANg8mneHKWx5sQeqIv2QoNJ0tSLpeTgf6bA2FEglLjHZeaqj7SAmYWTrCn+L7b76GR9RXYKBHyH0GnfIv8ICrwkMZakX # Securely set this with pulumi config set --secret
+  portfolio-website-pipeline:cloudflareAccountId:
+    secure: AAABALNB8fiQr8F98LwlHA9je4Hjq6mmsy4rdG20KqFdLRMyQ4CETH3QJR+iRoJUMUOs6ai1+9st+Hvx1LX8lA==
+  portfolio-website-pipeline:cloudflareApiToken:
+    secure: AAABAL3BVFEBqsIYB0RA0djQTkPGVUW0SeMKMJvYKeP1xuGpCs8HawujRCYL7vyIMIstKZcb0HtpqA+/6dvZIuGCHOfGYRsu
