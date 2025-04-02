@@ -10,7 +10,7 @@ import { PreviewEnvironment } from "./resources/preview";
 import { dashboard, errorAlarm } from "./resources/monitoring";
 
 // Export outputs
-export const websiteUrl = pulumi.interpolate`https://${environmentDomain}`;
 export const distributionId = distribution.id;
+export const websiteUrl = pulumi.interpolate`https://${environmentDomain}`;
 export const bucketName = siteBucket.bucket;
 export const dashboardUrl = pulumi.interpolate`https://console.aws.amazon.com/cloudwatch/home?region=${awsRegion}#dashboards:name=${namePrefix}-monitoring`;
