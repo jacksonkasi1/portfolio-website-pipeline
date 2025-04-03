@@ -78,6 +78,12 @@ Before getting started, make sure you have:
    npm install
    ```
 
+   or
+
+   ```bash
+   pnpm install
+   ```
+
 3. Configure Pulumi:
 
    ```bash
