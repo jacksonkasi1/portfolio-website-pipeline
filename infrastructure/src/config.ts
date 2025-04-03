@@ -40,6 +40,16 @@ export const cloudflareProvider = new cloudflare.Provider("cloudflare", {
     apiToken: cloudflareApiToken
 });
 
+// Get the Cloudflare zone using the provider
+const zoneData = pulumi.output(cloudflare.getZone({
+    name: domain,
+}, { provider: cloudflareProvider }));
+
+export const zone = {
+    id: zoneData.id,
+    name: zoneData.name
+};
+
 // Configure GitHub provider
 export const githubProvider = new github.Provider("github", {
     token: githubToken,

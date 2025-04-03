@@ -18,3 +18,4 @@ config:
     secure: AAABALNB8fiQr8F98LwlHA9je4Hjq6mmsy4rdG20KqFdLRMyQ4CETH3QJR+iRoJUMUOs6ai1+9st+Hvx1LX8lA==
   portfolio-website-pipeline:cloudflareApiToken:
     secure: AAABAL3BVFEBqsIYB0RA0djQTkPGVUW0SeMKMJvYKeP1xuGpCs8HawujRCYL7vyIMIstKZcb0HtpqA+/6dvZIuGCHOfGYRsu
+  portfolio-website-pipeline:cloudflareZoneId: 6d576cdce874b2adc0c0ff489781e1e4

@@ -33,9 +33,9 @@ export const secretValue = new aws.secretsmanager.SecretVersion(`${namePrefix}-g
     }`,
 });
 
-// Set up GitHub repository if it doesn't exist
+// Set up GitHub repository
 export const repo = new github.Repository(`${namePrefix}-repo`, {
-    name: "portfolio-website-pipeline-new",  // Use the exact repository name
+    name: environment === "prod" ? "portfolio-website-pipeline-prod" : "portfolio-website-pipeline-new",
     visibility: "private",
     hasIssues: true,
     hasProjects: true,
@@ -55,7 +55,8 @@ export const repo = new github.Repository(`${namePrefix}-repo`, {
     squashMergeCommitTitle: "PR_TITLE"
 }, { 
     provider: githubProvider,
-    dependsOn: [githubProvider]
+    dependsOn: [githubProvider],
+    protect: true  // This prevents Pulumi from trying to delete/recreate the repo
 });
 
 // Create GitHub Actions secrets
@@ -102,7 +103,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install --no-package-lock
-
+      
       - name: Build website
         run: npm run build
       
@@ -176,8 +177,12 @@ jobs:
           aws s3 sync dist/ s3://${environmentDomain}/ --delete
       
       - name: Invalidate CloudFront cache
-        if: ${environment === "prod" && distribution?.id}
-        run: aws cloudfront create-invalidation --distribution-id ${distribution?.id} --paths "/*"
+        if: ${environment === "prod"}
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items[?@=='${environmentDomain}']].Id" --output text)
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          fi
 
   deploy-prod:
     if: github.ref == 'refs/heads/main'
@@ -213,8 +218,11 @@ jobs:
           aws s3 sync dist/ s3://${domain}/ --delete
 
       - name: Invalidate CloudFront cache
-        if: ${environment === "prod" && distribution?.id}
-        run: aws cloudfront create-invalidation --distribution-id ${distribution?.id} --paths "/*"
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items[?@=='${domain}']].Id" --output text)
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          fi
 `;
 
 export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-file`, {
