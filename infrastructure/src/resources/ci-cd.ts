@@ -16,69 +16,91 @@ import {
 } from "../config";
 import { distribution } from "./cdn";
 
-// Set up GitHub Actions workflow for CI/CD
-export const actionsSecret = new aws.secretsmanager.Secret(`${namePrefix}-gh-secret`, {
-    name: `${namePrefix}-pulumi-access`,
-    description: "Access credentials for Pulumi deployments from GitHub Actions",
-    tags: tags,
-});
+/** AWS Secrets Manager secret for GitHub Actions */
+export const actionsSecret = new aws.secretsmanager.Secret(
+    `${namePrefix}-gh-secret`,
+    {
+        name: `${namePrefix}-pulumi-access`,
+        description: "Access credentials for Pulumi deployments from GitHub Actions",
+        tags,
+    }
+);
 
-// Store the Pulumi access token securely
-export const secretValue = new aws.secretsmanager.SecretVersion(`${namePrefix}-gh-secret-version`, {
-    secretId: actionsSecret.id,
-    secretString: pulumi.interpolate`{
-        "PULUMI_ACCESS_TOKEN": "${pulumiAccessToken}",
-        "AWS_ACCESS_KEY_ID": "${awsAccessKeyId}",
-        "AWS_SECRET_ACCESS_KEY": "${awsSecretAccessKey}"
-    }`,
-});
+/** Secret version containing Pulumi and AWS credentials */
+export const secretValue = new aws.secretsmanager.SecretVersion(
+    `${namePrefix}-gh-secret-version`,
+    {
+        secretId: actionsSecret.id,
+        secretString: pulumi.interpolate`{
+            "PULUMI_ACCESS_TOKEN": "${pulumiAccessToken}",
+            "AWS_ACCESS_KEY_ID": "${awsAccessKeyId}",
+            "AWS_SECRET_ACCESS_KEY": "${awsSecretAccessKey}"
+        }`,
+    }
+);
 
-// Set up GitHub repository
-export const repo = new github.Repository(`${namePrefix}-repo`, {
-    name: environment === "prod" ? "portfolio-website-pipeline-prod" : "portfolio-website-pipeline-new",
-    visibility: "private",
-    hasIssues: true,
-    hasProjects: true,
-    hasWiki: true,
-    allowMergeCommit: false,
-    allowSquashMerge: true,
-    allowRebaseMerge: true,
-    deleteBranchOnMerge: true,
-    autoInit: true,  // Initialize with README
-    description: "Portfolio website repository",
-    topics: ["portfolio", "website", "pulumi"],
-    defaultBranch: "main",
-    vulnerabilityAlerts: true,
-    allowAutoMerge: true,
-    allowUpdateBranch: true,
-    squashMergeCommitMessage: "PR_BODY",
-    squashMergeCommitTitle: "PR_TITLE"
-}, { 
-    provider: githubProvider,
-    dependsOn: [githubProvider],
-    protect: true  // This prevents Pulumi from trying to delete/recreate the repo
-});
+/** GitHub repository configuration */
+export const repo = new github.Repository(
+    `${namePrefix}-repo`,
+    {
+        name: environment === "prod" ? "portfolio-website-pipeline-prod" : "portfolio-website-pipeline-new",
+        visibility: "private",
+        hasIssues: true,
+        hasProjects: true,
+        hasWiki: true,
+        allowMergeCommit: false,
+        allowSquashMerge: true,
+        allowRebaseMerge: true,
+        deleteBranchOnMerge: true,
+        autoInit: true,  // Initialize with README
+        description: "Portfolio website repository",
+        topics: ["portfolio", "website", "pulumi"],
+        defaultBranch: "main",
+        vulnerabilityAlerts: true,
+        allowAutoMerge: true,
+        allowUpdateBranch: true,
+        squashMergeCommitMessage: "PR_BODY",
+        squashMergeCommitTitle: "PR_TITLE"
+    }, 
+    { 
+        provider: githubProvider,
+        dependsOn: [githubProvider],
+        protect: true  // This prevents Pulumi from trying to delete/recreate the repo
+    }
+);
 
-// Create GitHub Actions secrets
-export const pulumiAccessTokenSecret = new github.ActionsSecret(`${namePrefix}-pulumi-token-secret`, {
-    repository: repo.name,
-    secretName: "PULUMI_ACCESS_TOKEN",
-    plaintextValue: pulumiAccessToken,
-}, { provider: githubProvider });
+/** GitHub Actions secrets for deployment */
+export const pulumiAccessTokenSecret = new github.ActionsSecret(
+    `${namePrefix}-pulumi-token-secret`,
+    {
+        repository: repo.name,
+        secretName: "PULUMI_ACCESS_TOKEN",
+        plaintextValue: pulumiAccessToken,
+    },
+    { provider: githubProvider }
+);
 
-export const awsAccessKeySecret = new github.ActionsSecret(`${namePrefix}-aws-key-secret`, {
-    repository: repo.name,
-    secretName: "AWS_ACCESS_KEY_ID",
-    plaintextValue: awsAccessKeyId,
-}, { provider: githubProvider });
+export const awsAccessKeySecret = new github.ActionsSecret(
+    `${namePrefix}-aws-key-secret`,
+    {
+        repository: repo.name,
+        secretName: "AWS_ACCESS_KEY_ID",
+        plaintextValue: awsAccessKeyId,
+    },
+    { provider: githubProvider }
+);
 
-export const awsSecretKeySecret = new github.ActionsSecret(`${namePrefix}-aws-secret-secret`, {
-    repository: repo.name,
-    secretName: "AWS_SECRET_ACCESS_KEY",
-    plaintextValue: awsSecretAccessKey,
-}, { provider: githubProvider });
+export const awsSecretKeySecret = new github.ActionsSecret(
+    `${namePrefix}-aws-secret-secret`,
+    {
+        repository: repo.name,
+        secretName: "AWS_SECRET_ACCESS_KEY",
+        plaintextValue: awsSecretAccessKey,
+    },
+    { provider: githubProvider }
+);
 
-// Create GitHub Actions workflow file for CI/CD pipeline
+/** GitHub Actions workflow configuration */
 const workflowContent = `
 name: Portfolio Website CI/CD
 
@@ -204,17 +226,22 @@ jobs:
           fi
 `;
 
-export const workflowFile = new github.RepositoryFile(`${namePrefix}-workflow-file`, {
-    repository: repo.name,
-    file: ".github/workflows/deploy.yml",
-    content: workflowContent,
-    branch: "main",
-    commitMessage: "Add CI/CD workflow for portfolio website",
-    commitAuthor: "Pulumi Automation",
-    commitEmail: "automation@pulumi.com",
-    overwriteOnCreate: true,
-    autocreateBranch: true,
-}, { 
-    provider: githubProvider,
-    dependsOn: [repo]
-});
+/** GitHub Actions workflow file */
+export const workflowFile = new github.RepositoryFile(
+    `${namePrefix}-workflow-file`,
+    {
+        repository: repo.name,
+        file: ".github/workflows/deploy.yml",
+        content: workflowContent,
+        branch: "main",
+        commitMessage: "Add CI/CD workflow for portfolio website",
+        commitAuthor: "Pulumi Automation",
+        commitEmail: "automation@pulumi.com",
+        overwriteOnCreate: true,
+        autocreateBranch: true,
+    },
+    { 
+        provider: githubProvider,
+        dependsOn: [repo]
+    }
+);

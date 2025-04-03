@@ -8,7 +8,7 @@ import {
 import { siteBucket, bucketPolicy } from "./storage";
 import { certificate, certificateValidation } from "./certificate";
 
-// Create an origin access identity for CloudFront
+/** CloudFront Origin Access Identity for S3 bucket access */
 export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
   `${namePrefix}-oai`,
   {
@@ -16,7 +16,7 @@ export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
   }
 );
 
-// Create CloudFront distribution
+/** CloudFront distribution for content delivery */
 export const distribution = new aws.cloudfront.Distribution(
   `${namePrefix}-distribution`,
   {
@@ -79,7 +79,7 @@ export const distribution = new aws.cloudfront.Distribution(
   { dependsOn: [certificateValidation, siteBucket] }
 );
 
-// Set up bucket policy to allow CloudFront access
+/** Helper function to create bucket policy for OAI access */
 export function createBucketPolicyForOai(oaiArn: pulumi.Input<string>) {
   return pulumi
     .all([siteBucket.arn, oaiArn])

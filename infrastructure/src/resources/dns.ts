@@ -11,6 +11,7 @@ import { distribution } from "./cdn";
 const config = new pulumi.Config();
 const skipDnsCreation = false;
 
+/** Main domain record pointing to CloudFront */
 export const mainRecord = skipDnsCreation ? undefined : new cloudflare.Record(
     `${namePrefix}-record`,
     {
@@ -25,6 +26,7 @@ export const mainRecord = skipDnsCreation ? undefined : new cloudflare.Record(
     { provider: cloudflareProvider }
 );
 
+/** WWW subdomain record for production environment */
 export const wwwRecord = skipDnsCreation || environment !== "prod" ? undefined : 
     new cloudflare.Record(
         `${namePrefix}-www-record`,
@@ -40,6 +42,7 @@ export const wwwRecord = skipDnsCreation || environment !== "prod" ? undefined :
         { provider: cloudflareProvider }
     );
 
+/** Wildcard subdomain record for production environment */
 export const wildcardRecord = skipDnsCreation || environment !== "prod" ? undefined : 
     new cloudflare.Record(
         `${namePrefix}-wildcard-record`,
@@ -55,6 +58,7 @@ export const wildcardRecord = skipDnsCreation || environment !== "prod" ? undefi
         { provider: cloudflareProvider }
     );
 
+/** ACM certificate validation record */
 export const validationRecord = skipDnsCreation ? undefined : new cloudflare.Record(
     `${namePrefix}-dns-validation-${Date.now()}`,
     {
@@ -69,6 +73,7 @@ export const validationRecord = skipDnsCreation ? undefined : new cloudflare.Rec
     { provider: cloudflareProvider }
 );
 
+/** Additional certificate validation records */
 export const additionalValidationRecords: { [key: string]: cloudflare.Record | undefined } = {};
 
 if (environment === "prod" && !skipDnsCreation) {

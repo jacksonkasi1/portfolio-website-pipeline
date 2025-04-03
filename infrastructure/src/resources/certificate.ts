@@ -10,65 +10,61 @@ import {
   zone 
 } from "../config";
 
-// Create ACM certificate in us-east-1 region (required for CloudFront)
+/** AWS provider for us-east-1 region (required for CloudFront certificates) */
 const usEast1 = new aws.Provider("us-east-1", { region: "us-east-1" });
 
-// Use wildcard domain for production (covers both root and subdomains)
+/** Domain names for certificate (includes wildcard for production) */
 const domainNames = environment === "prod" 
-    ? [domain, `*.${domain}`]  // For prod, include wildcard for all subdomains
-    : [`${environment}.${domain}`];  // For non-prod, just the environment subdomain
+  ? [domain, `*.${domain}`]
+  : [`${environment}.${domain}`];
 
-// Create certificate with appropriate domain names
+/** ACM certificate for HTTPS */
 export const certificate = new aws.acm.Certificate(
-    `${namePrefix}-certificate`,
-    {
-        domainName: domainNames[0],
-        subjectAlternativeNames: domainNames.length > 1 ? domainNames.slice(1) : undefined,
-        validationMethod: "DNS",
-        tags,
-    },
-    { provider: usEast1 }
+  `${namePrefix}-certificate`,
+  {
+    domainName: domainNames[0],
+    subjectAlternativeNames: domainNames.length > 1 ? domainNames.slice(1) : undefined,
+    validationMethod: "DNS",
+    tags,
+  },
+  { provider: usEast1 }
 );
 
-// Create DNS validation records
 const skipDnsCreation = false;
+const validationRecords: { [key: string]: cloudflare.Record | undefined } = {};
 
-// Map to store validation records
-const validationRecords: {[key: string]: cloudflare.Record | undefined} = {};
-
-// Create validation records for the certificate
+/** Certificate validation options with DNS records */
 export const validationOptions = certificate.domainValidationOptions.apply(options => {
-    if (!skipDnsCreation) {
-        options.forEach((option, index) => {
-            // Extract just the validation domain part, removing the domain suffix
-            const recordName = option.resourceRecordName.replace(`.${domain}.`, '');
-            
-            validationRecords[`validation-${index}`] = new cloudflare.Record(
-                `${namePrefix}-cert-validation-${Date.now()}-${index}-${recordName}`,
-                {
-                    zoneId: zone.id,
-                    name: recordName,
-                    content: option.resourceRecordValue,
-                    type: option.resourceRecordType,
-                    ttl: 60, // Longer TTL is fine for validation
-                    proxied: false, // IMPORTANT: Must not be proxied
-                    allowOverwrite: true,
-                },
-                { provider: cloudflareProvider }
-            );
-        });
-    }
-    return options;
+  if (!skipDnsCreation) {
+    options.forEach((option, index) => {
+      const recordName = option.resourceRecordName.replace(`.${domain}.`, '');
+      
+      validationRecords[`validation-${index}`] = new cloudflare.Record(
+        `${namePrefix}-cert-validation-${Date.now()}-${index}-${recordName}`,
+        {
+          zoneId: zone.id,
+          name: recordName,
+          content: option.resourceRecordValue,
+          type: option.resourceRecordType,
+          ttl: 60,
+          proxied: false,
+          allowOverwrite: true,
+        },
+        { provider: cloudflareProvider }
+      );
+    });
+  }
+  return options;
 });
 
-// Create certificate validation
+/** Certificate validation resource */
 export const certificateValidation = new aws.acm.CertificateValidation(
-    `${namePrefix}-certificate-validation`,
-    {
-        certificateArn: certificate.arn,
-        validationRecordFqdns: validationOptions.apply(options => 
-            options.map(option => option.resourceRecordName)
-        ),
-    },
-    { provider: usEast1 }
+  `${namePrefix}-certificate-validation`,
+  {
+    certificateArn: certificate.arn,
+    validationRecordFqdns: validationOptions.apply(options => 
+      options.map(option => option.resourceRecordName)
+    ),
+  },
+  { provider: usEast1 }
 ); 

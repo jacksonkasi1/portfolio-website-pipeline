@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { namePrefix, environmentDomain, tags } from "../config";
 
-// Create an S3 bucket for the website content
+/** S3 bucket for hosting website content */
 export const siteBucket = new aws.s3.Bucket(`${namePrefix}-bucket`, {
   bucket: environmentDomain,
   website: {
@@ -12,7 +12,7 @@ export const siteBucket = new aws.s3.Bucket(`${namePrefix}-bucket`, {
   tags,
 });
 
-// Set bucket ownership controls
+/** Bucket ownership controls for proper access management */
 export const bucketOwnershipControls = new aws.s3.BucketOwnershipControls(
   `${namePrefix}-ownership-controls`,
   {
@@ -23,7 +23,7 @@ export const bucketOwnershipControls = new aws.s3.BucketOwnershipControls(
   }
 );
 
-// Configure public access block
+/** Public access configuration for website hosting */
 export const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(
   `${namePrefix}-public-access-block`,
   {
@@ -35,7 +35,7 @@ export const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(
   }
 );
 
-// Set bucket ACL to public-read
+/** ACL settings for public read access */
 export const bucketAcl = new aws.s3.BucketAclV2(
   `${namePrefix}-bucket-acl`,
   {
@@ -47,7 +47,7 @@ export const bucketAcl = new aws.s3.BucketAclV2(
   }
 );
 
-// Create bucket policy for public read access
+/** Policy allowing public read access to bucket contents */
 export const bucketPolicy = new aws.s3.BucketPolicy(
   `${namePrefix}-bucket-policy`,
   {
