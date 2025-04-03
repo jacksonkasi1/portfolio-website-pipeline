@@ -3,7 +3,6 @@ import * as aws from "@pulumi/aws";
 import {
   namePrefix,
   environmentDomain,
-  environment,
   tags,
 } from "../config";
 import { siteBucket, bucketPolicy } from "./storage";
@@ -84,8 +83,6 @@ export const distribution = new aws.cloudfront.Distribution(
 export function createBucketPolicyForOai(oaiArn: pulumi.Input<string>) {
   return pulumi
     .all([siteBucket.arn, oaiArn])
-    .apply(([bucketArn, oaiArn]) => {
-      return bucketPolicy;
-    });
+    .apply(([bucketArn, oaiArn]) => bucketPolicy);
 }
 

@@ -1,7 +1,14 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareProvider, zone } from "../config";
+import { 
+  namePrefix, 
+  tags, 
+  domain, 
+  environment, 
+  cloudflareProvider, 
+  zone 
+} from "../config";
 
 // Create ACM certificate in us-east-1 region (required for CloudFront)
 const usEast1 = new aws.Provider("us-east-1", { region: "us-east-1" });
@@ -12,12 +19,16 @@ const domainNames = environment === "prod"
     : [`${environment}.${domain}`];  // For non-prod, just the environment subdomain
 
 // Create certificate with appropriate domain names
-export const certificate = new aws.acm.Certificate(`${namePrefix}-certificate`, {
-    domainName: domainNames[0],
-    subjectAlternativeNames: domainNames.length > 1 ? domainNames.slice(1) : undefined,
-    validationMethod: "DNS",
-    tags: tags,
-}, { provider: usEast1 });
+export const certificate = new aws.acm.Certificate(
+    `${namePrefix}-certificate`,
+    {
+        domainName: domainNames[0],
+        subjectAlternativeNames: domainNames.length > 1 ? domainNames.slice(1) : undefined,
+        validationMethod: "DNS",
+        tags,
+    },
+    { provider: usEast1 }
+);
 
 // Create DNS validation records
 const skipDnsCreation = false;
