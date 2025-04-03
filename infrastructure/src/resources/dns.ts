@@ -25,7 +25,7 @@ export const mainRecord = skipDnsCreation ? undefined : new cloudflare.Record(`$
     name: environment === "prod" ? "@" : environment,
     content: distribution.domainName.apply(name => name),
     type: "CNAME",
-    proxied: true,
+    proxied: false,
     ttl: 1,
     allowOverwrite: true,
 }, { 
@@ -39,7 +39,7 @@ export const wwwRecord = skipDnsCreation || environment !== "prod" ? undefined :
         name: "www",
         content: distribution.domainName.apply(name => name),
         type: "CNAME",
-        proxied: true,
+        proxied: false,
         ttl: 1,
         allowOverwrite: true,
     }, { 
@@ -53,7 +53,7 @@ export const wildcardRecord = skipDnsCreation || environment !== "prod" ? undefi
         name: "*",
         content: distribution.domainName.apply(name => name),
         type: "CNAME",
-        proxied: true,
+        proxied: false,
         ttl: 1,
         allowOverwrite: true,
     }, { 
@@ -67,7 +67,7 @@ export const validationRecord = skipDnsCreation ? undefined : new cloudflare.Rec
     type: "CNAME",
     content: `_cfbd377b475c2394187653d2f5a8f5a9.xlfgrmvvlj.acm-validations.aws`,
     ttl: 1,
-    proxied: false, // Important: DNS validation must NOT be proxied
+    proxied: false,
     allowOverwrite: true,
 }, { provider: cloudflareProvider });
 
@@ -84,7 +84,7 @@ if (environment === "prod" && !skipDnsCreation) {
             content: "_cfbd377b475c2394187653d2f5a8f5a9.xlfgrmvvlj.acm-validations.aws",
             type: "CNAME",
             ttl: 1,
-            proxied: false, // Important: DNS validation must NOT be proxied
+            proxied: false,
             allowOverwrite: true,
         },
         { provider: cloudflareProvider }
