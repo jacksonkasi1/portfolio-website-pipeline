@@ -1,57 +1,93 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
 import * as cloudflare from "@pulumi/cloudflare";
-import { namePrefix, tags, domain, environment, cloudflareAccountId, awsRegion, cloudflareProvider } from "../config";
+import { 
+    namePrefix, 
+    zone,
+    environment,
+    cloudflareProvider
+} from "../config";
 import { distribution } from "./cdn";
 
-// Create ACM Certificate in us-east-1 (required for CloudFront)
-const eastRegionProvider = new aws.Provider('east1-provider', {
-    region: awsRegion
-});
+const config = new pulumi.Config();
+const skipDnsCreation = false;
 
-export const certificate = new aws.acm.Certificate(`${namePrefix}-cert`, {
-    domainName: domain,
-    validationMethod: "DNS",
-    subjectAlternativeNames: [
-        `*.${domain}` // Covers all subdomains
-    ],
-    tags: tags,
-}, { provider: eastRegionProvider });
+/** Main domain record pointing to CloudFront */
+export const mainRecord = skipDnsCreation ? undefined : new cloudflare.Record(
+    `${namePrefix}-record`,
+    {
+        zoneId: zone.id,
+        name: environment === "prod" ? "@" : environment,
+        content: distribution.domainName.apply(name => name),
+        type: "CNAME",
+        proxied: false,
+        ttl: 1,
+        allowOverwrite: true,
+    },
+    { provider: cloudflareProvider }
+);
 
-// Set up DNS with Cloudflare
-export const zone = new cloudflare.Zone(`${namePrefix}-zone`, {
-    zone: domain,
-    accountId: cloudflareAccountId,
-}, { provider: cloudflareProvider });
-
-// Create DNS validation records
-const validationRecords = certificate.domainValidationOptions.apply(options => {
-    return options.map(option => {
-        return new cloudflare.Record(`${namePrefix}-cert-validation-${option.domainName.replace(/\./g, "-")}`, {
+/** WWW subdomain record for production environment */
+export const wwwRecord = skipDnsCreation || environment !== "prod" ? undefined : 
+    new cloudflare.Record(
+        `${namePrefix}-www-record`,
+        {
             zoneId: zone.id,
-            name: option.resourceRecordName!,
-            type: option.resourceRecordType!,
-            value: option.resourceRecordValue!,
-            ttl: 60,
+            name: "www",
+            content: distribution.domainName.apply(name => name),
+            type: "CNAME",
             proxied: false,
-        }, { provider: cloudflareProvider });
-    });
-});
+            ttl: 1,
+            allowOverwrite: true,
+        },
+        { provider: cloudflareProvider }
+    );
 
-// Wait for certificate validation to complete
-export const certificateValidation = new aws.acm.CertificateValidation(`${namePrefix}-cert-validation`, {
-    certificateArn: certificate.arn,
-    validationRecordFqdns: validationRecords.apply(records => 
-        records.map(record => `${record.name}.${domain}`)
-    ),
-}, { provider: eastRegionProvider });
+/** Wildcard subdomain record for production environment */
+export const wildcardRecord = skipDnsCreation || environment !== "prod" ? undefined : 
+    new cloudflare.Record(
+        `${namePrefix}-wildcard-record`,
+        {
+            zoneId: zone.id,
+            name: "*",
+            content: distribution.domainName.apply(name => name),
+            type: "CNAME",
+            proxied: false,
+            ttl: 1,
+            allowOverwrite: true,
+        },
+        { provider: cloudflareProvider }
+    );
 
-// Create DNS record for the domain
-export const record = new cloudflare.Record(`${namePrefix}-record`, {
-    zoneId: zone.id,
-    name: environment === "prod" ? "@" : environment,
-    value: distribution.domainName,
-    type: "CNAME",
-    ttl: 3600,
-    proxied: true,
-}, { provider: cloudflareProvider });
+/** ACM certificate validation record */
+export const validationRecord = skipDnsCreation ? undefined : new cloudflare.Record(
+    `${namePrefix}-dns-validation-${Date.now()}`,
+    {
+        zoneId: zone.id,
+        name: "_acm-validation",
+        type: "CNAME",
+        content: "_cfbd377b475c2394187653d2f5a8f5a9.xlfgrmvvlj.acm-validations.aws",
+        ttl: 1,
+        proxied: false,
+        allowOverwrite: true,
+    },
+    { provider: cloudflareProvider }
+);
+
+/** Additional certificate validation records */
+export const additionalValidationRecords: { [key: string]: cloudflare.Record | undefined } = {};
+
+if (environment === "prod" && !skipDnsCreation) {
+    additionalValidationRecords["_6ea6d11dff2166264fad0b2d97658855"] = new cloudflare.Record(
+        `${namePrefix}-dns-validation-${Date.now()}-additional`,
+        {
+            zoneId: zone.id,
+            name: "_6ea6d11dff2166264fad0b2d97658855",
+            content: "_cfbd377b475c2394187653d2f5a8f5a9.xlfgrmvvlj.acm-validations.aws",
+            type: "CNAME",
+            ttl: 1,
+            proxied: false,
+            allowOverwrite: true,
+        },
+        { provider: cloudflareProvider }
+    );
+}

@@ -3,14 +3,12 @@ import * as aws from "@pulumi/aws";
 import {
   namePrefix,
   environmentDomain,
-  environment,
   tags,
 } from "../config";
-import { siteBucket } from "./storage";
-import { createBucketPolicy } from "./storage";
-import { certificateValidation } from "./dns";
+import { siteBucket, bucketPolicy } from "./storage";
+import { certificate, certificateValidation } from "./certificate";
 
-// Create an origin access identity for CloudFront
+/** CloudFront Origin Access Identity for S3 bucket access */
 export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
   `${namePrefix}-oai`,
   {
@@ -18,7 +16,7 @@ export const originAccessIdentity = new aws.cloudfront.OriginAccessIdentity(
   }
 );
 
-// Create a CloudFront distribution for the website
+/** CloudFront distribution for content delivery */
 export const distribution = new aws.cloudfront.Distribution(
   `${namePrefix}-distribution`,
   {
@@ -32,8 +30,7 @@ export const distribution = new aws.cloudfront.Distribution(
         domainName: siteBucket.bucketRegionalDomainName,
         originId: siteBucket.arn,
         s3OriginConfig: {
-          originAccessIdentity:
-            originAccessIdentity.cloudfrontAccessIdentityPath,
+          originAccessIdentity: originAccessIdentity.cloudfrontAccessIdentityPath,
         },
       },
     ],
@@ -51,14 +48,12 @@ export const distribution = new aws.cloudfront.Distribution(
       },
       minTtl: 0,
       defaultTtl: 3600,
-      maxTtl: environment === "prod" ? 86400 : 3600, // Longer cache for production
+      maxTtl: 86400,
       compress: true,
     },
 
-    // Different settings for different environments
-    priceClass: environment === "prod" ? "PriceClass_All" : "PriceClass_100",
+    priceClass: "PriceClass_All",
 
-    // Custom error responses
     customErrorResponses: [
       {
         errorCode: 404,
@@ -74,18 +69,20 @@ export const distribution = new aws.cloudfront.Distribution(
     },
 
     viewerCertificate: {
-      acmCertificateArn: certificateValidation.certificateArn,
+      acmCertificateArn: certificate.arn,
       sslSupportMethod: "sni-only",
       minimumProtocolVersion: "TLSv1.2_2021",
     },
 
     tags: tags,
-  }
+  },
+  { dependsOn: [certificateValidation, siteBucket] }
 );
 
-// Set up bucket policy to allow CloudFront access
-export const bucketPolicy = pulumi
-  .all([siteBucket.arn, originAccessIdentity.iamArn])
-  .apply(([bucketArn, oaiArn]) => {
-    return createBucketPolicy(bucketArn, oaiArn);
-  });
+/** Helper function to create bucket policy for OAI access */
+export function createBucketPolicyForOai(oaiArn: pulumi.Input<string>) {
+  return pulumi
+    .all([siteBucket.arn, oaiArn])
+    .apply(([bucketArn, oaiArn]) => bucketPolicy);
+}
+

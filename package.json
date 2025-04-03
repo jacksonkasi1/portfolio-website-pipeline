@@ -1,0 +1,13 @@
+{
+  "name": "portfolio-website",
+  "version": "1.0.0",
+  "description": "Portfolio Website",
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"const fs=require('fs-extra');fs.emptyDirSync('dist');fs.copySync('src','dist')\"",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.3.0"
+  }
+}

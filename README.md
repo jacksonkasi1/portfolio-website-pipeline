@@ -2,7 +2,6 @@
 
 A complete CI/CD pipeline solution for deploying and managing a portfolio website across multiple environments (development, staging, production) using Pulumi's Infrastructure as Code capabilities.
 
-
 ## Features
 
 - **Multi-environment Infrastructure**: Separate dev, staging, and production environments with appropriate configurations
@@ -13,6 +12,15 @@ A complete CI/CD pipeline solution for deploying and managing a portfolio websit
 - **DNS Management**: Automatic DNS configuration with Cloudflare
 - **Security Best Practices**: Private S3 buckets with CloudFront access, TLS certificates
 - **Cost Optimization**: Environment-specific settings to minimize costs in non-production
+
+### NOTE
+
+The `src` directory and `package.json` file are not part of the Pulumi infrastructure code. They are example website files that I've included for reference.
+You should add your own website code to the target repository that Pulumi creates.
+
+### Example Repository
+
+You can see an example of a repository created using this Pulumi infrastructure at [portfolio-website-pipeline-new](https://github.com/jacksonkasi1/portfolio-website-pipeline-new). This repository demonstrates how your website code should be structured in the Pulumi-created repository.
 
 ## Architecture
 
@@ -30,12 +38,30 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 
 ### Prerequisites
 
-- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
-- [Node.js](https://nodejs.org/) (v14 or higher)
-- AWS Account
-- GitHub Account
-- Cloudflare Account (for DNS management)
-- Domain name
+Before getting started, make sure you have:
+
+- **Development Environment**:
+
+  - [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) (version 3.0 or higher)
+  - [Node.js](https://nodejs.org/) (v14 or higher)
+  - [Git](https://git-scm.com/downloads)
+
+- **Cloud Accounts**:
+
+  - **AWS Account** with IAM user having appropriate permissions:
+    - S3, CloudFront, ACM, CloudWatch, Secrets Manager
+    - Access key and secret key pair
+  - **GitHub Account** with:
+    - Personal access token with repo and workflow permissions
+    - Repository for your portfolio website
+  - **Cloudflare Account** with:
+    - Registered domain with DNS managed by Cloudflare
+    - API token with Zone Read and DNS Edit permissions
+    - Account ID (found in the dashboard overview)
+
+- **Domain Name**:
+  - Must be registered and managed in Cloudflare
+  - DNS records will be managed by Pulumi through the Cloudflare provider
 
 ### Installation
 
@@ -52,6 +78,12 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
    npm install
    ```
 
+   or
+
+   ```bash
+   pnpm install
+   ```
+
 3. Configure Pulumi:
 
    ```bash
@@ -66,7 +98,6 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 4. Set up secrets (make sure to use `--secret` flag):
 
    ```bash
-   pulumi config set --secret portfolio-website-pipeline:certificateArn arn:aws:acm:ap-south-1:123456789012:certificate/your-cert-id
    pulumi config set --secret portfolio-website-pipeline:pulumiAccessToken <your-pulumi-token>
    pulumi config set --secret portfolio-website-pipeline:awsAccessKeyId <your-aws-key>
    pulumi config set --secret portfolio-website-pipeline:awsSecretAccessKey <your-aws-secret>
@@ -156,9 +187,146 @@ You can customize this solution by:
 
 ### Common Issues
 
-1. **Certificate Not Found**: Ensure your ACM certificate is in the ap-south-1 region for CloudFront
+1. **Certificate Not Found**: Ensure your ACM certificate is in the us-east-1 region for CloudFront
 2. **DNS Not Resolving**: Check Cloudflare DNS propagation (can take up to 48 hours)
 3. **Deployment Failures**: Check GitHub Actions logs for detailed error messages
+
+### DNS Issues and Solutions
+
+#### Cloudflare DNS Setup
+
+If you encounter errors related to DNS records already existing in Cloudflare, follow these steps:
+
+1. **Issue**: When trying to create DNS records with Pulumi, you might see errors like:
+
+   ```
+   attempted to override existing record however didn't find an exact match
+   ```
+
+2. **Solution**:
+
+   - Log in to Cloudflare and check existing DNS records
+   - If you're changing record types (e.g., from A records to CNAME records), you need to manually delete the old records first
+   - Specifically, you may need to delete existing A records for:
+     - Your root domain (e.g., jacksonkasi.xyz)
+     - www subdomain (e.g., www.jacksonkasi.xyz)
+     - Wildcard record (\*.jacksonkasi.xyz)
+   - After deleting the records, run `pulumi up --stack prod --yes` to create the new records
+
+3. **My Experience**: In my case, I had default A records from my domain registrar gen.xyz pointing to a default IP (54.67.87.110). I needed to remove these and replace them with CNAME records pointing to CloudFront for proper CDN functionality.
+
+#### Certificate Validation Issues
+
+If your certificate validation fails:
+
+1. Make sure validation records in Cloudflare have `proxied: false` (this is critical)
+2. Allow sufficient time for validation (up to 30 minutes)
+3. Check that your certificate is in the us-east-1 region, which is required for CloudFront
+
+#### Cloudflare Proxy Settings
+
+1. **Issue**: If you encounter "ERR_TOO_MANY_REDIRECTS" or infinite redirect loops when accessing your website, this is likely due to both CloudFront and Cloudflare trying to handle HTTPS/SSL:
+
+   ```
+   Too many redirects occurred trying to open jacksonkasi.xyz
+   ```
+
+2. **Solution**:
+
+   - By default, this infrastructure is configured with Cloudflare proxy disabled (`proxied: false`) in `dns.ts`
+   - This is the recommended setup when using CloudFront as your CDN
+   - If you want to use Cloudflare's proxy/CDN features instead:
+     1. Remove the CloudFront distribution from the infrastructure
+     2. Set `proxied: true` for your DNS records in `dns.ts`
+     3. Configure Cloudflare SSL/TLS settings appropriately
+
+3. **Best Practice**: Choose either CloudFront or Cloudflare as your CDN, not both:
+   - Using CloudFront (current setup):
+     - Keep Cloudflare proxy disabled
+     - CloudFront handles SSL and content delivery
+   - Using Cloudflare:
+     - Remove CloudFront from the infrastructure
+     - Enable Cloudflare proxy
+     - Configure Cloudflare SSL/TLS settings
+
+### Required AWS Permissions
+
+The AWS credentials used need the following permissions:
+
+- S3 full access
+- CloudFront full access
+- ACM (Certificate Manager) full access
+- Route 53 full access (if using Route 53)
+- CloudWatch full access (for monitoring)
+- Secrets Manager full access
+
+Consider using a policy like:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+        "cloudfront:*",
+        "acm:*",
+        "cloudwatch:*",
+        "secretsmanager:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### Required Cloudflare Permissions
+
+The Cloudflare API token needs:
+
+- Zone Read access
+- DNS Edit access
+
+To create an API token with these permissions:
+
+1. Log in to your Cloudflare account
+2. Go to My Profile > API Tokens
+3. Create Token > Edit Zone DNS template
+4. Select the specific zone (domain) you're managing
+5. Create Token and use this token in your Pulumi configuration
+
+## Advanced Configuration
+
+### Transitioning from Default IP to CloudFront
+
+If you've registered your domain with a provider like gen.xyz, it may initially have A records pointing to a default IP. To properly use CloudFront with your domain:
+
+1. **Understand Current Setup**:
+
+   - Default setup often uses A records pointing to a provider-supplied IP
+   - This doesn't leverage CloudFront's CDN capabilities or proper HTTPS
+
+2. **Migration Steps**:
+
+   - First, confirm your CloudFront distribution is properly set up
+   - Delete the existing A records in Cloudflare for:
+     - Root domain (@)
+     - www subdomain
+     - Wildcard (\*) if it exists
+   - Run `pulumi up` to create new CNAME records pointing to your CloudFront domain
+
+3. **Verify the Changes**:
+
+   - Wait for DNS propagation (can take up to 48 hours, but often less)
+   - Check that your website loads via HTTPS
+   - Verify the CloudFront distribution is being used by checking response headers
+
+4. **Benefits of CloudFront**:
+   - Global CDN with edge caching for faster loading
+   - Built-in HTTPS with your ACM certificate
+   - DDoS protection and security features
+   - Better reliability and redundancy
 
 ## License
 
