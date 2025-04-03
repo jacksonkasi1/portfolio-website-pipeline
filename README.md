@@ -13,6 +13,15 @@ A complete CI/CD pipeline solution for deploying and managing a portfolio websit
 - **Security Best Practices**: Private S3 buckets with CloudFront access, TLS certificates
 - **Cost Optimization**: Environment-specific settings to minimize costs in non-production
 
+### NOTE
+
+The `src` directory and `package.json` file are not part of the Pulumi infrastructure code. They are example website files that I've included for reference.
+You should add your own website code to the target repository that Pulumi creates.
+
+### Example Repository
+
+You can see an example of a repository created using this Pulumi infrastructure at [portfolio-website-pipeline-new](https://github.com/jacksonkasi1/portfolio-website-pipeline-new). This repository demonstrates how your website code should be structured in the Pulumi-created repository.
+
 ## Architecture
 
 This solution uses the following AWS services:
@@ -32,11 +41,13 @@ The infrastructure is defined with Pulumi and deployed through GitHub Actions wo
 Before getting started, make sure you have:
 
 - **Development Environment**:
+
   - [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) (version 3.0 or higher)
   - [Node.js](https://nodejs.org/) (v14 or higher)
   - [Git](https://git-scm.com/downloads)
 
 - **Cloud Accounts**:
+
   - **AWS Account** with IAM user having appropriate permissions:
     - S3, CloudFront, ACM, CloudWatch, Secrets Manager
     - Access key and secret key pair
@@ -181,17 +192,19 @@ You can customize this solution by:
 If you encounter errors related to DNS records already existing in Cloudflare, follow these steps:
 
 1. **Issue**: When trying to create DNS records with Pulumi, you might see errors like:
+
    ```
    attempted to override existing record however didn't find an exact match
    ```
 
 2. **Solution**:
+
    - Log in to Cloudflare and check existing DNS records
    - If you're changing record types (e.g., from A records to CNAME records), you need to manually delete the old records first
    - Specifically, you may need to delete existing A records for:
      - Your root domain (e.g., jacksonkasi.xyz)
      - www subdomain (e.g., www.jacksonkasi.xyz)
-     - Wildcard record (*.jacksonkasi.xyz)
+     - Wildcard record (\*.jacksonkasi.xyz)
    - After deleting the records, run `pulumi up --stack prod --yes` to create the new records
 
 3. **My Experience**: In my case, I had default A records from my domain registrar gen.xyz pointing to a default IP (54.67.87.110). I needed to remove these and replace them with CNAME records pointing to CloudFront for proper CDN functionality.
@@ -207,11 +220,13 @@ If your certificate validation fails:
 #### Cloudflare Proxy Settings
 
 1. **Issue**: If you encounter "ERR_TOO_MANY_REDIRECTS" or infinite redirect loops when accessing your website, this is likely due to both CloudFront and Cloudflare trying to handle HTTPS/SSL:
+
    ```
    Too many redirects occurred trying to open jacksonkasi.xyz
    ```
 
 2. **Solution**:
+
    - By default, this infrastructure is configured with Cloudflare proxy disabled (`proxied: false`) in `dns.ts`
    - This is the recommended setup when using CloudFront as your CDN
    - If you want to use Cloudflare's proxy/CDN features instead:
@@ -268,6 +283,7 @@ The Cloudflare API token needs:
 - DNS Edit access
 
 To create an API token with these permissions:
+
 1. Log in to your Cloudflare account
 2. Go to My Profile > API Tokens
 3. Create Token > Edit Zone DNS template
@@ -281,18 +297,21 @@ To create an API token with these permissions:
 If you've registered your domain with a provider like gen.xyz, it may initially have A records pointing to a default IP. To properly use CloudFront with your domain:
 
 1. **Understand Current Setup**:
+
    - Default setup often uses A records pointing to a provider-supplied IP
    - This doesn't leverage CloudFront's CDN capabilities or proper HTTPS
 
 2. **Migration Steps**:
+
    - First, confirm your CloudFront distribution is properly set up
    - Delete the existing A records in Cloudflare for:
      - Root domain (@)
      - www subdomain
-     - Wildcard (*) if it exists
+     - Wildcard (\*) if it exists
    - Run `pulumi up` to create new CNAME records pointing to your CloudFront domain
 
 3. **Verify the Changes**:
+
    - Wait for DNS propagation (can take up to 48 hours, but often less)
    - Check that your website loads via HTTPS
    - Verify the CloudFront distribution is being used by checking response headers
