@@ -204,6 +204,30 @@ If your certificate validation fails:
 2. Allow sufficient time for validation (up to 30 minutes)
 3. Check that your certificate is in the us-east-1 region, which is required for CloudFront
 
+#### Cloudflare Proxy Settings
+
+1. **Issue**: If you encounter "ERR_TOO_MANY_REDIRECTS" or infinite redirect loops when accessing your website, this is likely due to both CloudFront and Cloudflare trying to handle HTTPS/SSL:
+   ```
+   Too many redirects occurred trying to open jacksonkasi.xyz
+   ```
+
+2. **Solution**:
+   - By default, this infrastructure is configured with Cloudflare proxy disabled (`proxied: false`) in `dns.ts`
+   - This is the recommended setup when using CloudFront as your CDN
+   - If you want to use Cloudflare's proxy/CDN features instead:
+     1. Remove the CloudFront distribution from the infrastructure
+     2. Set `proxied: true` for your DNS records in `dns.ts`
+     3. Configure Cloudflare SSL/TLS settings appropriately
+
+3. **Best Practice**: Choose either CloudFront or Cloudflare as your CDN, not both:
+   - Using CloudFront (current setup):
+     - Keep Cloudflare proxy disabled
+     - CloudFront handles SSL and content delivery
+   - Using Cloudflare:
+     - Remove CloudFront from the infrastructure
+     - Enable Cloudflare proxy
+     - Configure Cloudflare SSL/TLS settings
+
 ### Required AWS Permissions
 
 The AWS credentials used need the following permissions:
